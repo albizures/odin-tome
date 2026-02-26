@@ -28,6 +28,7 @@ Token_Kind :: enum {
 	// special
 	Invalid,
 	EOF,
+	Comment,
 
 	// values
 	Bool,
@@ -94,6 +95,11 @@ get_token :: proc(t: ^Tokenizer, loc := #caller_location) -> (token: Token) {
 		consume_rune(t)
 		// maybe it would be better to ignore whitespace in the beginning
 		return get_token(t)
+	case '#':
+		token.start = t.index
+		token.kind = .Comment
+		consume_comment(t)
+		token.end = t.index
 	case:
 		token.start = t.index
 		token.kind = get_kind(t.current)
@@ -122,6 +128,13 @@ get_kind :: proc(r: rune) -> Token_Kind {
 		return .Equal
 	case:
 		return .Invalid
+	}
+}
+
+@(private)
+consume_comment :: proc(t: ^Tokenizer) {
+	for t.current != '\n' && t.current != utf8.RUNE_EOF {
+		consume_rune(t)
 	}
 }
 
