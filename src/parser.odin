@@ -16,3 +16,9 @@ Value :: union {
 	Array,
 	Object,
 }
+
+parse :: proc(input: string) -> (result: Object) {
+	
+
+	return
+}

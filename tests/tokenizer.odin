@@ -1,12 +1,12 @@
 package tome_tests
 
 import tome "../src"
-import "core:fmt"
 import "core:log"
 import "core:testing"
 
 @(test)
-test_ident_and_number2 :: proc(t: ^testing.T) {
+test_ident_and_int :: proc(t: ^testing.T) {
+	value := "test=123"
 	tokenizer := tome.make_tokenizer("test=123")
 
 	testing.expect_value(t, tome.get_token(&tokenizer), tome.Token{kind = .Ident, span = {0, 4}})
@@ -15,31 +15,52 @@ test_ident_and_number2 :: proc(t: ^testing.T) {
 	testing.expect_value(t, tome.get_token(&tokenizer), tome.Token{kind = .EOF, span = {8, 8}})
 }
 
+@(test)
+test_ident_and_decimal :: proc(t: ^testing.T) {
+	tokenizer := tome.make_tokenizer("test=123.45")
 
-// @(test)
-// test_ident_and_string2 :: proc(t: ^testing.T) {
-// 	using config
-// 	tokenizer := make_tokenizer(`test="123"`)
+	testing.expect_value(t, tome.get_token(&tokenizer), tome.Token{kind = .Ident, span = {0, 4}})
+	testing.expect_value(t, tome.get_token(&tokenizer), tome.Token{kind = .Equal, span = {4, 5}})
+	testing.expect_value(t, tome.get_token(&tokenizer), tome.Token{kind = .Float, span = {5, 11}})
+	testing.expect_value(t, tome.get_token(&tokenizer), tome.Token{kind = .EOF, span = {11, 11}})
+}
 
-// 	testing.expect_value(t, get_token(&tokenizer), Ident_Token{value = "test", span = {0, 4}})
-// 	testing.expect_value(t, get_token(&tokenizer), Equal_Token{span = {4, 5}})
-// 	testing.expect_value(t, get_token(&tokenizer), Value_Token{span = {5, 10}, value = "123"})
-// 	testing.expect_value(t, get_token(&tokenizer), EOF_Token{span = {10, 10}})
-// }
+@(test)
+test_ident_and_bool :: proc(t: ^testing.T) {
+	tokenizer := tome.make_tokenizer("test=true")
+
+	testing.expect_value(t, tome.get_token(&tokenizer), tome.Token{kind = .Ident, span = {0, 4}})
+	testing.expect_value(t, tome.get_token(&tokenizer), tome.Token{kind = .Equal, span = {4, 5}})
+	testing.expect_value(t, tome.get_token(&tokenizer), tome.Token{kind = .Bool, span = {5, 9}})
+	testing.expect_value(t, tome.get_token(&tokenizer), tome.Token{kind = .EOF, span = {9, 9}})
+}
 
 
-// @(test)
-// test_ident_and_multiline2 :: proc(t: ^testing.T) {
-// 	using config
+@(test)
+test_ident_and_multiline :: proc(t: ^testing.T) {
+	tokenizer := tome.make_tokenizer(`test="
+123
+345
+"
+`)
 
-// 	tokenizer := make_tokenizer(`test="""
-// 123
-// 345
-// """
-// `)
+	testing.expect_value(t, tome.get_token(&tokenizer), tome.Token{kind = .Ident, span = {0, 4}})
+	testing.expect_value(t, tome.get_token(&tokenizer), tome.Token{kind = .Equal, span = {4, 5}})
+	testing.expect_value(t, tome.get_token(&tokenizer), tome.Token{kind = .String, span = {5, 16}})
+	testing.expect_value(t, tome.get_token(&tokenizer), tome.Token{kind = .EOF, span = {17, 17}})
+}
 
-// 	testing.expect_value(t, get_token(&tokenizer), Ident_Token{value = "test", span = {0, 4}})
-// 	testing.expect_value(t, get_token(&tokenizer), Equal_Token{span = {4, 5}})
-// 	testing.expect_value(t, get_token(&tokenizer), Value_Token{span = {5, 20}, value = "123\n345"})
-// 	testing.expect_value(t, get_token(&tokenizer), EOF_Token{span = {21, 21}})
-// }
+
+@(test)
+test_ident_and_escaping :: proc(t: ^testing.T) {
+	tokenizer := tome.make_tokenizer(`test="\
+\"123\"
+345\
+"
+`)
+
+	testing.expect_value(t, tome.get_token(&tokenizer), tome.Token{kind = .Ident, span = {0, 4}})
+	testing.expect_value(t, tome.get_token(&tokenizer), tome.Token{kind = .Equal, span = {4, 5}})
+	testing.expect_value(t, tome.get_token(&tokenizer), tome.Token{kind = .String, span = {5, 22}})
+	testing.expect_value(t, tome.get_token(&tokenizer), tome.Token{kind = .EOF, span = {23, 23}})
+}

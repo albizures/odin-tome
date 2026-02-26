@@ -30,8 +30,7 @@ Token_Kind :: enum {
 	EOF,
 
 	// values
-	False,
-	True,
+	Bool,
 	Integer,
 	Float,
 	String,
@@ -75,7 +74,13 @@ get_token :: proc(t: ^Tokenizer, loc := #caller_location) -> (token: Token) {
 		token.start = t.index
 		consume_ident(t)
 		token.end = t.index
-		token.kind = .Ident
+		value := t.data[token.start:token.end]
+
+		if value == "true" || value == "false" {
+			token.kind = .Bool
+		} else {
+			token.kind = .Ident
+		}
 	case '0' ..= '9':
 		token.start = t.index
 		token.kind = consume_number(t)
@@ -124,7 +129,7 @@ get_kind :: proc(r: rune) -> Token_Kind {
 consume_rune :: proc(t: ^Tokenizer) -> rune #no_bounds_check {
 	if t.index >= len(t.data) {
 		t.current = utf8.RUNE_EOF
-		t.index = len(t.data) - 1
+		t.index = len(t.data)
 	} else {
 		t.index += t.width
 		t.current, t.width = utf8.decode_rune_in_string(t.data[t.index:])
