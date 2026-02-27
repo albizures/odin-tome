@@ -16,12 +16,12 @@ assert_token :: proc(
 ) {
 	token := tome.get_token(tokenizer)
 	if token.kind == .EOF {
-		testing.expect_value(t, "", value)
+		testing.expect_value(t, value, "")
 	} else {
-		testing.expect_value(t, value, tome.get_span_value(tokenizer^, token), loc = loc)
+		testing.expect_value(t, tome.get_span_value(tokenizer^, token), value, loc = loc)
 	}
 
-	testing.expect_value(t, tome.Token{kind = kind, span = span}, token, loc = loc)
+	testing.expect_value(t, token, tome.Token{kind = kind, span = span}, loc = loc)
 }
 
 @(test)
@@ -104,4 +104,46 @@ tokenize_comment :: proc(t: ^testing.T) {
 "`, {5, 18})
 	assert_token(t, &tokenizer, .Comment, "# comment", {19, 28})
 	assert_token(t, &tokenizer, .EOF, "", {29, 29})
+}
+
+
+@(test)
+tokenize_array :: proc(t: ^testing.T) {
+	tokenizer := tome.make_tokenizer(`test=[
+123,
+345,
+]
+`)
+
+	assert_token(t, &tokenizer, .Ident, "test", {0, 4})
+	assert_token(t, &tokenizer, .Equal, "=", {4, 5})
+	assert_token(t, &tokenizer, .Open_Bracket, "[", {5, 6})
+	assert_token(t, &tokenizer, .Integer, "123", {7, 10})
+	assert_token(t, &tokenizer, .Comma, ",", {10, 11})
+	assert_token(t, &tokenizer, .Integer, "345", {12, 15})
+	assert_token(t, &tokenizer, .Comma, ",", {15, 16})
+	assert_token(t, &tokenizer, .Close_Bracket, "]", {17, 18})
+	assert_token(t, &tokenizer, .EOF, "", {19, 19})
+}
+
+@(test)
+tokenize_object :: proc(t: ^testing.T) {
+	tokenizer := tome.make_tokenizer(`test={
+name = 123,
+value = 345
+}
+`)
+
+	assert_token(t, &tokenizer, .Ident, "test", {0, 4})
+	assert_token(t, &tokenizer, .Equal, "=", {4, 5})
+	assert_token(t, &tokenizer, .Open_Brace, "{", {5, 6})
+	assert_token(t, &tokenizer, .Ident, "name", {7, 11})
+	assert_token(t, &tokenizer, .Equal, "=", {12, 13})
+	assert_token(t, &tokenizer, .Integer, "123", {14, 17})
+	assert_token(t, &tokenizer, .Comma, ",", {17, 18})
+	assert_token(t, &tokenizer, .Ident, "value", {19, 24})
+	assert_token(t, &tokenizer, .Equal, "=", {25, 26})
+	assert_token(t, &tokenizer, .Integer, "345", {27, 30})
+	assert_token(t, &tokenizer, .Close_Brace, "}", {31, 32})
+	assert_token(t, &tokenizer, .EOF, "", {33, 33})
 }
