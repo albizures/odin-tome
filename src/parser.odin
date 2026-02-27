@@ -32,6 +32,9 @@ Tome_Error :: enum {
 	Invalid_Int,
 	Invalid_Float,
 	Invalid_Bool,
+	Missing_Array_Close,
+	Missing_Object_Close,
+	Expect_Comma,
 }
 
 Parser :: struct {
@@ -59,25 +62,38 @@ parse :: proc(
 		errors    = make([dynamic]Tome_Error, allocator),
 	}
 
+	advance_token(&parser)
 
-	return parse_next(&parser), parser.errors[:]
+	return parse_object_members(&parser), parser.errors[:]
 }
 
-parse_next :: proc(p: ^Parser) -> (result: Object) {
+parse_object_members :: proc(p: ^Parser) -> (result: Object) {
 	result = make(Object, p.allocator)
 	loop: for {
-		advance_token(p)
+
 		#partial switch p.curr_token.kind {
 		case .Invalid:
 			append(&p.errors, Tome_Error.Invalid_Token)
+			advance_token(p)
 		case .Comment:
-			continue
+			advance_token(p)
 		case .Ident:
 			parse_ident(p, &result)
 		case .EOF:
 			break loop
 		case:
 			append(&p.errors, Tome_Error.Invalid_Token)
+			advance_token(p)
+		}
+
+		if p.curr_token.kind == .Comma {
+			advance_token(p) // just ignore it
+		} else if p.curr_token.kind == .EOF ||
+		   p.curr_token.kind == .Close_Brace ||
+		   p.curr_token.kind == .Close_Bracket {
+			break loop
+		} else { 	// if it's not a comma nor EOF, means there is something else, meaning a comma is expected
+			append(&p.errors, Tome_Error.Expect_Comma)
 		}
 	}
 
@@ -93,6 +109,7 @@ parse_ident :: proc(p: ^Parser, result: ^Object) {
 	}
 
 	name := get_span_value(p.tokenizer, p.curr_token)
+	log.debug("Parse ident", name)
 	advance_token(p)
 
 	// expects an equal after the identifier
@@ -106,25 +123,87 @@ parse_ident :: proc(p: ^Parser, result: ^Object) {
 	result[name] = parse_value(p)
 }
 
-parse_value :: proc(p: ^Parser) -> Value {
+parse_value :: proc(p: ^Parser) -> (value: Value) {
+	log.debug("Parse value", p.curr_token.kind)
 	str := get_current_value(p)
 	#partial switch p.curr_token.kind {
 	case .String:
-		return parse_string(p, str)
+		value = parse_string(p, str)
 	case .Integer:
-		return parse_int(p, str)
+		value = parse_int(p, str)
 	case .Float:
-		return parse_float(p, str)
+		value = parse_float(p, str)
 	case .True, .False:
-		return parse_bool(p, str)
+		value = parse_bool(p, str)
+	case .Open_Brace:
+		value = parse_object(p)
+		return // parse_object already advance internallly
+	case .Open_Bracket:
+		value = parse_array(p)
+		return // parse_object already advance internallly
 	case .Nil:
-		value := Nil{}
-		return value
+		value = Nil{}
 	case:
 		append(&p.errors, Tome_Error.Invalid_Value)
-		value := Nil{}
-		return value
+		value = Nil{}
 	}
+
+	advance_token(p)
+	return
+}
+
+parse_array :: proc(p: ^Parser) -> (array: Array) {
+	log.debug("Parse array")
+	array = make(Array, p.allocator)
+
+	advance_token(p) // advance [
+
+	if p.curr_token.kind == .Close_Bracket { 	// empty
+		advance_token(p)
+		return
+	}
+
+
+	append(&array, parse_value(p))
+	for p.curr_token.kind == .Comma {
+		advance_token(p)
+
+		if p.curr_token.kind == .Close_Bracket {
+			advance_token(p)
+			return
+		}
+
+		append(&array, parse_value(p))
+
+	}
+
+	if p.curr_token.kind == .Close_Bracket {
+		advance_token(p)
+	} else {
+		append(&p.errors, Tome_Error.Missing_Array_Close)
+	}
+
+	return
+}
+
+parse_object :: proc(p: ^Parser) -> (obj: Object) {
+	log.debug("parse object")
+	advance_token(p) // advance {
+
+	if p.curr_token.kind == .Open_Brace { 	// empty
+		advance_token(p)
+		return
+	}
+
+	obj = parse_object_members(p)
+
+	if p.curr_token.kind == .Close_Brace {
+		advance_token(p)
+	} else {
+		append(&p.errors, Tome_Error.Missing_Object_Close)
+	}
+
+	return
 }
 
 parse_string :: proc(parser: ^Parser, value: string) -> string {
