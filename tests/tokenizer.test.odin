@@ -5,9 +5,6 @@ import "core:log"
 import "core:testing"
 import "core:unicode/utf8"
 
-get_span_value :: proc(t: tome.Tokenizer, token: tome.Token) -> string {
-	return t.data[token.start:token.end]
-}
 
 assert_token :: proc(
 	t: ^testing.T,
@@ -21,14 +18,14 @@ assert_token :: proc(
 	if token.kind == .EOF {
 		testing.expect_value(t, "", value)
 	} else {
-		testing.expect_value(t, value, get_span_value(tokenizer^, token), loc = loc)
+		testing.expect_value(t, value, tome.get_span_value(tokenizer^, token), loc = loc)
 	}
 
 	testing.expect_value(t, tome.Token{kind = kind, span = span}, token, loc = loc)
 }
 
 @(test)
-test_ident_and_int :: proc(t: ^testing.T) {
+tokenize_int :: proc(t: ^testing.T) {
 	value := "test=123"
 	tokenizer := tome.make_tokenizer("test=123")
 	assert_token(t, &tokenizer, .Ident, "test", {0, 4})
@@ -38,7 +35,7 @@ test_ident_and_int :: proc(t: ^testing.T) {
 }
 
 @(test)
-test_ident_and_decimal :: proc(t: ^testing.T) {
+tokenize_decimal :: proc(t: ^testing.T) {
 	tokenizer := tome.make_tokenizer("test=123.45")
 
 	assert_token(t, &tokenizer, .Ident, "test", span = {0, 4})
@@ -48,18 +45,18 @@ test_ident_and_decimal :: proc(t: ^testing.T) {
 }
 
 @(test)
-test_ident_and_bool :: proc(t: ^testing.T) {
+tokenize_bool :: proc(t: ^testing.T) {
 	tokenizer := tome.make_tokenizer("test=true")
 
 	assert_token(t, &tokenizer, .Ident, "test", span = {0, 4})
 	assert_token(t, &tokenizer, .Equal, "=", span = {4, 5})
-	assert_token(t, &tokenizer, .Bool, "true", span = {5, 9})
+	assert_token(t, &tokenizer, .True, "true", span = {5, 9})
 	assert_token(t, &tokenizer, .EOF, "", span = {9, 9})
 }
 
 
 @(test)
-test_ident_and_multiline :: proc(t: ^testing.T) {
+tokenize_multiline :: proc(t: ^testing.T) {
 	tokenizer := tome.make_tokenizer(`test="
 123
 345
@@ -74,7 +71,7 @@ test_ident_and_multiline :: proc(t: ^testing.T) {
 
 
 @(test)
-test_ident_and_escaping :: proc(t: ^testing.T) {
+tokenize_escaping :: proc(t: ^testing.T) {
 	tokenizer := tome.make_tokenizer(`test="\
 \"123\"
 345\
@@ -91,7 +88,7 @@ test_ident_and_escaping :: proc(t: ^testing.T) {
 }
 
 @(test)
-test_ident_and_comment :: proc(t: ^testing.T) {
+tokenize_comment :: proc(t: ^testing.T) {
 	tokenizer := tome.make_tokenizer(`test="\
 123
 345\

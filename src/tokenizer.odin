@@ -31,7 +31,9 @@ Token_Kind :: enum {
 	Comment,
 
 	// values
-	Bool,
+	False,
+	True,
+	Nil,
 	Integer,
 	Float,
 	String,
@@ -77,8 +79,12 @@ get_token :: proc(t: ^Tokenizer, loc := #caller_location) -> (token: Token) {
 		token.end = t.index
 		value := t.data[token.start:token.end]
 
-		if value == "true" || value == "false" {
-			token.kind = .Bool
+		if value == "true" {
+			token.kind = .True
+		} else if value == "false" {
+			token.kind = .False
+		} else if value == "nil" {
+			token.kind = .Nil
 		} else {
 			token.kind = .Ident
 		}
@@ -228,4 +234,9 @@ scan_escape :: proc(t: ^Tokenizer) -> bool {
 		consume_rune(t)
 	}
 	return false
+}
+
+
+get_span_value :: proc(t: Tokenizer, token: Token) -> string {
+	return t.data[token.start:token.end]
 }
