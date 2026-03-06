@@ -1,9 +1,5 @@
 package tome
 
-import "core:fmt"
-import "core:log"
-import "core:strconv"
-import "core:strings"
 import "core:unicode/utf8"
 
 CUTSET :: "\n"
