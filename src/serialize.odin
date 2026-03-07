@@ -9,7 +9,7 @@ serialize :: proc(obj: Object, allocator := context.allocator) -> string {
 	first := true
 	for key, value in obj {
 		if !first {
-			strings.write_string(&builder, "\n")
+			strings.write_string(&builder, ",\n")
 		}
 		first = false
 

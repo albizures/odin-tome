@@ -90,5 +90,5 @@ test_serialize_multiple_root_keys :: proc(t: ^testing.T) {
 
 	result := tome.serialize(doc, context.temp_allocator)
 
-	testing.expect(t, result == "key1=1\nkey2=2" || result == "key2=2\nkey1=1")
+	testing.expect(t, result == "key1=1,\nkey2=2" || result == "key2=2,\nkey1=1")
 }
