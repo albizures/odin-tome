@@ -2,7 +2,7 @@
 
 Tome is a simple text-based format for data interchange. It is designed to be a lightweight alternative to JSON and TOML.
 
-Tome looks similar to TOML but it's more like JSON with some tweaks here and there. All Tome files are objects without exception.
+Tome looks similar to TOML but it's more like JSON with some tweaks here and there. All Tome files are objects or arrays without exception.
 
 ## Current Status
 
@@ -26,40 +26,40 @@ This project is currently under heavy development. Features and syntax may chang
 # It only supports line comments by using the `#` symbol. Like this one
 
 # Tome looks similar to TOML but it's more like JSON with some tweaks here and there
-# All tome files are objects without exception
+# All tome files are objects or arrays without exception
 
 # Just like JSON, there are key-value pairs (spaces between equal signs are optional)
 # But unlike JSON, there are no quotes around keys
 # Strings are enclosed in double quotes
-title = "Example file" # comments are supported at the end of the line too
+title = "Example file", # comments are supported at the end of the line too
 
 # strings are multi-line by default
 multi_line_string = "This is a multi-line string.
-It can span multiple lines."
+It can span multiple lines.",
 
-escaped = "This is an escaped string with a backslash: \\" # just like JSON
+escaped = "This is an escaped string with a backslash: \\", # just like JSON
 
 # Support literal values for numbers and booleans
-enabled = true
-port = 8080
+enabled = true,
+port = 8080,
 
 # Support arrays, which can be nested
-array = [1, 2, 3]
+array = [1, 2, 3],
 
 # Unlike TOML arrays can be multi-line
 array = [
     1,
     2,
     3,
-]
+],
 
 # Support objects
-object = {key = "value"}
+object = {key = "value"},
 
 # And a combination of arrays and objects
 combination = {
 	values: [1, 2, 3]
-}
+},
 ```
 
 ## Installation
