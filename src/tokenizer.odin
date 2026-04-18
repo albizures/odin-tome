@@ -1,23 +1,18 @@
 package tome
 
+import "core:fmt"
+import "core:log"
 import "core:unicode/utf8"
-
-CUTSET :: "\n"
-
-Span :: struct {
-	start, end: int,
-}
+import tok "odeps:tokenizer"
+import st "odeps:st"
 
 Tokenizer :: struct {
-	data:    string,
-	current: rune,
-	index:   int,
-	width:   int,
+	using tok: tok.Tokenizer,
 }
 
 Token :: struct {
-	using span: Span,
-	kind:       Token_Kind,
+	using tok: tok.Token,
+	kind:      Token_Kind,
 }
 
 Token_Kind :: enum {
@@ -46,6 +41,11 @@ Token_Kind :: enum {
 	Ident,
 }
 
+create_tokenizer :: proc(input: string) -> Tokenizer {
+	t := tok.create(input)
+	return Tokenizer{tok = t}
+}
+
 is_letter :: proc(r: rune) -> bool {
 	c := u8(r)
 	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
@@ -56,24 +56,13 @@ is_number :: proc(r: rune) -> bool {
 	return c >= '0' && c <= '9'
 }
 
-make_tokenizer :: proc(data: string) -> Tokenizer {
-	t := Tokenizer {
-		data = data,
-	}
-
-	consume_rune(&t)
-
-	return t
-}
-
-
 get_token :: proc(t: ^Tokenizer, loc := #caller_location) -> (token: Token) {
 	switch t.current {
 	case 'A' ..= 'Z', 'a' ..= 'z', '_':
-		token.start = t.index
+		token.x = t.index
 		consume_ident(t)
-		token.end = t.index
-		value := t.data[token.start:token.end]
+		token.y = t.index
+		value := tok.get_value(t, token)
 
 		if value == "true" {
 			token.kind = .True
@@ -85,28 +74,28 @@ get_token :: proc(t: ^Tokenizer, loc := #caller_location) -> (token: Token) {
 			token.kind = .Ident
 		}
 	case '0' ..= '9':
-		token.start = t.index
+		token.x = t.index
 		token.kind = consume_number(t)
-		token.end = t.index
+		token.y = t.index
 	case '"':
-		token.start = t.index
+		token.x = t.index
 		value := consume_string(t)
-		token.end = t.index
+		token.y = t.index
 		token.kind = .String
 	case '\n', ' ', '\t', '\r':
-		consume_rune(t)
+		tok.advance(t)
 		// maybe it would be better to ignore whitespace in the beginning
 		return get_token(t)
 	case '#':
-		token.start = t.index
+		token.x = t.index
 		token.kind = .Comment
 		consume_comment(t)
-		token.end = t.index
+		token.y = t.index
 	case:
-		token.start = t.index
+		token.x = t.index
 		token.kind = get_kind(t.current)
-		consume_rune(t)
-		token.end = t.index
+		tok.advance(t)
+		token.y = t.index
 	}
 
 	return
@@ -133,45 +122,30 @@ get_kind :: proc(r: rune) -> Token_Kind {
 	}
 }
 
-@(private)
+
 consume_comment :: proc(t: ^Tokenizer) {
 	for t.current != '\n' && t.current != utf8.RUNE_EOF {
-		consume_rune(t)
+		tok.advance(t)
 	}
 }
 
-@(private)
-consume_rune :: proc(t: ^Tokenizer) -> rune #no_bounds_check {
-	if t.index >= len(t.data) {
-		t.current = utf8.RUNE_EOF
-		t.index = len(t.data)
-	} else {
-		t.index += t.width
-		t.current, t.width = utf8.decode_rune_in_string(t.data[t.index:])
-		if t.index >= len(t.data) {
-			t.current = utf8.RUNE_EOF
-		}
-	}
-	return t.current
-}
 
-@(private)
 consume_ident :: proc(t: ^Tokenizer) {
 	for is_letter(t.current) || is_number(t.current) || t.current == '_' {
-		consume_rune(t)
+		tok.advance(t)
 	}
 }
 
-@(private)
+
 consume_string :: proc(t: ^Tokenizer) -> string {
 	quote := t.current
-	consume_rune(t)
+	tok.advance(t)
 	start := t.index
 	end := t.index
 	for t.current != utf8.RUNE_EOF {
 		r := t.current
 		end = t.index
-		consume_rune(t)
+		tok.advance(t)
 		if r < 0 {
 			// just considering the string as finished
 			break
@@ -184,15 +158,15 @@ consume_string :: proc(t: ^Tokenizer) -> string {
 		}
 	}
 
-	return string(t.data[start:end])
+	return tok.get_value(t, {start, end})
 }
 
-@(private)
 consume_number :: proc(t: ^Tokenizer) -> Token_Kind {
 	with_decimal_point := false
 
 	loop: for t.current != utf8.RUNE_EOF {
-		switch consume_rune(t) {
+		tok.advance(t)
+		switch t.current {
 		case '0' ..= '9':
 		// okay
 		case '.':
@@ -207,17 +181,16 @@ consume_number :: proc(t: ^Tokenizer) -> Token_Kind {
 	return .Float if with_decimal_point else .Integer
 }
 
-@(private)
 scan_escape :: proc(t: ^Tokenizer) -> bool {
 	switch t.current {
 	case '"', '\'', '\\', '/', 'b', 'n', 'r', 't', 'f':
-		consume_rune(t)
+		tok.advance(t)
 		return true
 	case 'u':
 		// Expect 4 hexadecimal digits
 		for i := 0; i < 4; i += 1 {
-			r := consume_rune(t)
-			switch r {
+			tok.advance(t)
+			switch t.current {
 			case '0' ..= '9', 'a' ..= 'f', 'A' ..= 'F':
 			// Okay
 			case:
@@ -227,12 +200,12 @@ scan_escape :: proc(t: ^Tokenizer) -> bool {
 		return true
 	case:
 		// Ignore the next rune regardless
-		consume_rune(t)
+		tok.advance(t)
 	}
 	return false
 }
 
 
-get_span_value :: proc(t: Tokenizer, token: Token) -> string {
-	return t.data[token.start:token.end]
+get_span_value :: proc(t: ^Tokenizer, token: Token) -> string {
+	return st.get_content(t.source, token)
 }

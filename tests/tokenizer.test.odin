@@ -1,6 +1,7 @@
 package tome_tests
 
 import tome "../src"
+import st "odeps:st"
 import "core:log"
 import "core:testing"
 import "core:unicode/utf8"
@@ -11,14 +12,14 @@ assert_token :: proc(
 	tokenizer: ^tome.Tokenizer,
 	kind: tome.Token_Kind,
 	value: string,
-	span: tome.Span,
+	span: st.Span,
 	loc := #caller_location,
 ) {
 	token := tome.get_token(tokenizer)
 	if token.kind == .EOF {
 		testing.expect_value(t, value, "")
 	} else {
-		testing.expect_value(t, tome.get_span_value(tokenizer^, token), value, loc = loc)
+		testing.expect_value(t, tome.get_span_value(tokenizer, token), value, loc = loc)
 	}
 
 	testing.expect_value(t, token, tome.Token{kind = kind, span = span}, loc = loc)
@@ -27,7 +28,7 @@ assert_token :: proc(
 @(test)
 tokenize_int :: proc(t: ^testing.T) {
 	value := "test=123"
-	tokenizer := tome.make_tokenizer("test=123")
+	tokenizer := tome.create_tokenizer("test=123")
 	assert_token(t, &tokenizer, .Ident, "test", {0, 4})
 	assert_token(t, &tokenizer, .Equal, "=", {4, 5})
 	assert_token(t, &tokenizer, .Integer, "123", {5, 8})
@@ -36,7 +37,7 @@ tokenize_int :: proc(t: ^testing.T) {
 
 @(test)
 tokenize_decimal :: proc(t: ^testing.T) {
-	tokenizer := tome.make_tokenizer("test=123.45")
+	tokenizer := tome.create_tokenizer("test=123.45")
 
 	assert_token(t, &tokenizer, .Ident, "test", span = {0, 4})
 	assert_token(t, &tokenizer, .Equal, "=", span = {4, 5})
@@ -46,7 +47,7 @@ tokenize_decimal :: proc(t: ^testing.T) {
 
 @(test)
 tokenize_bool :: proc(t: ^testing.T) {
-	tokenizer := tome.make_tokenizer("test=true")
+	tokenizer := tome.create_tokenizer("test=true")
 
 	assert_token(t, &tokenizer, .Ident, "test", span = {0, 4})
 	assert_token(t, &tokenizer, .Equal, "=", span = {4, 5})
@@ -57,7 +58,7 @@ tokenize_bool :: proc(t: ^testing.T) {
 
 @(test)
 tokenize_multiline :: proc(t: ^testing.T) {
-	tokenizer := tome.make_tokenizer(`test="
+	tokenizer := tome.create_tokenizer(`test="
 123
 345
 "
@@ -72,7 +73,7 @@ tokenize_multiline :: proc(t: ^testing.T) {
 
 @(test)
 tokenize_escaping :: proc(t: ^testing.T) {
-	tokenizer := tome.make_tokenizer(`test="\
+	tokenizer := tome.create_tokenizer(`test="\
 \"123\"
 345\
 "
@@ -89,7 +90,7 @@ tokenize_escaping :: proc(t: ^testing.T) {
 
 @(test)
 tokenize_comment :: proc(t: ^testing.T) {
-	tokenizer := tome.make_tokenizer(`test="\
+	tokenizer := tome.create_tokenizer(`test="\
 123
 345\
 "
@@ -109,7 +110,7 @@ tokenize_comment :: proc(t: ^testing.T) {
 
 @(test)
 tokenize_array :: proc(t: ^testing.T) {
-	tokenizer := tome.make_tokenizer(`test=[
+	tokenizer := tome.create_tokenizer(`test=[
 123,
 345,
 ]
@@ -128,7 +129,7 @@ tokenize_array :: proc(t: ^testing.T) {
 
 @(test)
 tokenize_object :: proc(t: ^testing.T) {
-	tokenizer := tome.make_tokenizer(`test={
+	tokenizer := tome.create_tokenizer(`test={
 name = 123,
 value = 345
 }

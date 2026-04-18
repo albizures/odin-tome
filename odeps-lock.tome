@@ -1,0 +1,6 @@
+version=1,
+deps=[
+	{folder="/Users/a/projects/odinson/odin-tome/odeps/tokenizer", commit="f35a44ea2589b30011da9cadc871e12b11ae328b", url="https://github.com/albizures/st/tree/main/tokenizer"},
+	{commit="dea4193f4967380bf7b8390aadeda7ff8a5f72d4", folder="/Users/a/projects/odinson/odin-tome/odeps/lines", url="https://github.com/albizures/st/tree/main/lines"},
+	{commit="343a7c712b65053f3a238c80cfbca90cd3b67345", folder="/Users/a/projects/odinson/odin-tome/odeps/st", url="https://github.com/albizures/st/tree/main/st"},
+]

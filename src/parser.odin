@@ -57,7 +57,7 @@ parse :: proc(
 	errors: []Tome_Error,
 ) {
 	parser := Parser {
-		tokenizer = make_tokenizer(input),
+		tokenizer = create_tokenizer(input),
 		allocator = allocator,
 		errors    = make([dynamic]Tome_Error, allocator),
 	}
@@ -109,12 +109,12 @@ parse_object_members :: proc(p: ^Parser) -> (result: Object) {
 parse_ident :: proc(p: ^Parser, result: ^Object) {
 	assert(p.curr_token.kind == .Ident, "Invalid call to parse_ident")
 	// let's check if the identifier is valid
-	if p.curr_token.span.start - p.curr_token.span.end >= 0 {
+	if p.curr_token.span.x - p.curr_token.span.y >= 0 {
 		append(&p.errors, Tome_Error.Invalid_Ident)
 		return
 	}
 
-	name := get_span_value(p.tokenizer, p.curr_token)
+	name := get_span_value(&p.tokenizer, p.curr_token)
 	log.debug("Parse ident", name)
 	advance_token(p)
 
@@ -254,5 +254,5 @@ parse_bool :: proc(parser: ^Parser, value: string) -> bool {
 
 
 get_current_value :: proc(p: ^Parser) -> string {
-	return get_span_value(p.tokenizer, p.curr_token)
+	return get_span_value(&p.tokenizer, p.curr_token)
 }
