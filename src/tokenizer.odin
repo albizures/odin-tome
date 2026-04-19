@@ -8,6 +8,7 @@ import st "odeps:st"
 
 Tokenizer :: struct {
 	using tok: tok.Tokenizer,
+	preserve_trivia: bool,
 }
 
 Token :: struct {
@@ -20,6 +21,8 @@ Token_Kind :: enum {
 	Invalid,
 	EOF,
 	Comment,
+	Whitespace,
+	Newline,
 
 	// values
 	False,
@@ -83,9 +86,30 @@ get_token :: proc(t: ^Tokenizer, loc := #caller_location) -> (token: Token) {
 		token.y = t.index
 		token.kind = .String
 	case '\n', ' ', '\t', '\r':
-		tok.advance(t)
-		// maybe it would be better to ignore whitespace in the beginning
-		return get_token(t)
+		if t.preserve_trivia {
+			token.x = t.index
+			if t.current == '\n' || t.current == '\r' {
+				token.kind = .Newline
+				if t.current == '\r' {
+					tok.advance(t)
+					if t.current == '\n' {
+						tok.advance(t)
+					}
+				} else {
+					tok.advance(t)
+				}
+			} else {
+				token.kind = .Whitespace
+				for t.current == ' ' || t.current == '\t' {
+					tok.advance(t)
+				}
+			}
+			token.y = t.index
+		} else {
+			tok.advance(t)
+			// maybe it would be better to ignore whitespace in the beginning
+			return get_token(t)
+		}
 	case '#':
 		token.x = t.index
 		token.kind = .Comment
