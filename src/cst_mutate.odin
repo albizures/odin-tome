@@ -1,4 +1,4 @@
-package tome
+package tome_src
 
 import "core:mem"
 import "core:strings"

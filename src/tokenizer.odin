@@ -1,13 +1,13 @@
-package tome
+package tome_src
 
 import "core:fmt"
 import "core:log"
 import "core:unicode/utf8"
-import tok "odeps:tokenizer"
 import st "odeps:st"
+import tok "odeps:tokenizer"
 
 Tokenizer :: struct {
-	using tok: tok.Tokenizer,
+	using tok:       tok.Tokenizer,
 	preserve_trivia: bool,
 }
 

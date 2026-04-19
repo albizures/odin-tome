@@ -1,4 +1,4 @@
-package tome
+package tome_src
 
 import "core:mem"
 import "core:strings"
@@ -13,7 +13,7 @@ serialize_cst_node :: proc(node: ^CST_Node, builder: ^strings.Builder) {
 	if node == nil {
 		return
 	}
-	
+
 	if len(node.children) == 0 {
 		strings.write_string(builder, node.value_string)
 	} else {

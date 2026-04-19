@@ -1,6 +1,6 @@
 package tome_tests
 
-import tome "../src"
+import tome "../"
 import "core:log"
 import "core:testing"
 
@@ -40,9 +40,9 @@ ports = [
 `
 
 	cst := tome.parse_cst(input)
-	defer tome.free_cst_node(cst)
+	defer tome.free_node(cst)
 
-	output := tome.serialize_cst(cst)
+	output := tome.serialize(cst)
 	defer delete(output)
 
 	testing.expect_value(t, output, input)
@@ -56,7 +56,7 @@ host = "localhost"
 `
 
 	cst := tome.parse_cst(input)
-	defer tome.free_cst_node(cst)
+	defer tome.free_node(cst)
 
 	port_node := tome.cst_find_node_by_key(cst, "port")
 	testing.expect(t, port_node != nil, "port node should be found")
@@ -67,7 +67,7 @@ host = "localhost"
 port = 9000 # default port
 host = "localhost"
 `
-	output := tome.serialize_cst(cst)
+	output := tome.serialize(cst)
 	defer delete(output)
 	testing.expect_value(t, output, expected)
 }

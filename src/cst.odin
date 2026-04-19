@@ -1,4 +1,4 @@
-package tome
+package tome_src
 
 import "core:mem"
 import "core:strings"
@@ -13,8 +13,8 @@ CST_Node_Kind :: enum {
 	Integer_Literal,
 	Float_Literal,
 	Boolean_Literal,
-	Trivia,       // For Whitespace, Newlines, and Comments
-	Punctuation,  // Equals, Commas, Brackets, Braces
+	Trivia, // For Whitespace, Newlines, and Comments
+	Punctuation, // Equals, Commas, Brackets, Braces
 }
 
 CST_Node :: struct {
@@ -35,11 +35,11 @@ free_cst_node :: proc(node: ^CST_Node, allocator := context.allocator) {
 	if node == nil {
 		return
 	}
-	
+
 	for child in node.children {
 		free_cst_node(child, allocator)
 	}
-	
+
 	delete(node.children)
 	free(node, allocator)
 }

@@ -1,10 +1,10 @@
 package tome_tests
 
-import tome "../src"
-import st "odeps:st"
+import tome "../"
 import "core:log"
 import "core:testing"
 import "core:unicode/utf8"
+import st "odeps:st"
 
 
 assert_token :: proc(

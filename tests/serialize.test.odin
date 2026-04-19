@@ -1,6 +1,6 @@
 package tome_tests
 
-import tome "../src"
+import tome "../"
 import "core:log"
 import "core:strings"
 import "core:testing"
