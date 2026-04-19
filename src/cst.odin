@@ -1,5 +1,8 @@
 package tome
 
+import "core:mem"
+import "core:strings"
+
 CST_Node_Kind :: enum {
 	File,
 	Object,
@@ -28,6 +31,21 @@ new_cst_node :: proc(kind: CST_Node_Kind, allocator := context.allocator) -> ^CS
 	return node
 }
 
+free_cst_node :: proc(node: ^CST_Node, allocator := context.allocator) {
+	if node == nil {
+		return
+	}
+	
+	for child in node.children {
+		free_cst_node(child, allocator)
+	}
+	
+	delete(node.children)
+	free(node, allocator)
+}
+
 add_child :: proc(parent: ^CST_Node, child: ^CST_Node) {
-	append(&parent.children, child)
+	if child != nil {
+		append(&parent.children, child)
+	}
 }
